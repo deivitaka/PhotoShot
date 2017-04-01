@@ -283,7 +283,7 @@ extension ViewController {
         }
     }
     
-    @IBAction func toggleHDR(button: UIButton) {
+    @IBAction func toggleHR(button: UIButton) {
         highResolutionEnabled = !highResolutionEnabled
         button.titleLabel?.font = highResolutionEnabled ?
             UIFont (name: "System-Heavy", size: 15) :
