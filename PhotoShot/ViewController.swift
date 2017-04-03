@@ -10,6 +10,10 @@ import UIKit
 import AVFoundation
 import Photos
 
+enum LiveMode {
+    case On, Off, Unavailable
+}
+
 class ViewController: UIViewController {
 
     var captureSession = AVCaptureSession()
@@ -20,7 +24,7 @@ class ViewController: UIViewController {
     var previewing = false
     var highResolutionEnabled = true
     var rawEnabled = false
-    var live = 0
+    var live = LiveMode.Off
     var flashMode = AVCaptureFlashMode.off
     var cameraPosition = AVCaptureDevicePosition.back
     
@@ -67,7 +71,7 @@ class ViewController: UIViewController {
                     captureSession.addOutput(cameraOutput)
                     
                     if !cameraOutput.isLivePhotoCaptureSupported {
-                        self.live = -1
+                        self.live = .Unavailable
                     }
                     
                     previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
@@ -200,7 +204,7 @@ extension ViewController {
             }
         }
         
-        if self.live == 1 {
+        if self.live == .On {
             let path = "\(NSTemporaryDirectory())/Photoshot_\(settings.uniqueID)"
             settings.livePhotoMovieFileURL = URL(fileURLWithPath: path)
         }
@@ -262,23 +266,20 @@ extension ViewController {
     
     @IBAction func toggleLive(button: UIButton) {
         switch live {
-        case -1:
+        case .Unavailable:
             showToast(text: "Live photo not supported")
             break
             
-        case 1:
-            live = 0
+        case .On:
+            live = .Off
             showToast(text: "Live: off")
             button.titleLabel?.font = UIFont (name: "System-Thin", size: 15)
             break
             
-        case 0:
-            live = 1
+        case .Off:
+            live = .On
             showToast(text: "Live on")
             button.titleLabel?.font = UIFont (name: "System-Heavy", size: 15)
-            break
-            
-        default:
             break
         }
     }
