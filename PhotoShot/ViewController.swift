@@ -25,8 +25,8 @@ class ViewController: UIViewController {
     var highResolutionEnabled = true
     var rawEnabled = false
     var live = LiveMode.Off
-    var flashMode = AVCaptureFlashMode.off
-    var cameraPosition = AVCaptureDevicePosition.back
+    var flashMode = AVCaptureDevice.FlashMode.off
+    var cameraPosition = AVCaptureDevice.Position.back
     
     @IBOutlet weak var capturedButton: UIButton!
     @IBOutlet weak var previewView: UIView!
@@ -55,14 +55,15 @@ class ViewController: UIViewController {
     }
     
     func loadCamera() {
-        let device = AVCaptureDevice.defaultDevice(withDeviceType: .builtInWideAngleCamera,
-                                                   mediaType: AVMediaTypeVideo,
-                                                   position: cameraPosition)
+        let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition)
         
-        captureSession.removeInput(captureSession.inputs.first as! AVCaptureInput!)
-        captureSession.sessionPreset = AVCaptureSessionPresetPhoto
         
-        if let input = try? AVCaptureDeviceInput(device: device) {
+        if let firstCaptureInput = captureSession.inputs.first {
+            captureSession.removeInput(firstCaptureInput)
+        }
+        captureSession.sessionPreset = AVCaptureSession.Preset.photo
+        
+        if let input = try? AVCaptureDeviceInput(device: device!) {
             if (captureSession.canAddInput(input)) {
                 captureSession.addInput(input)
                 if (captureSession.canAddOutput(cameraOutput)) {
@@ -76,7 +77,7 @@ class ViewController: UIViewController {
                     
                     previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
                     previewLayer.frame = previewView.bounds
-                    previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
+                    previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
                     previewView.clipsToBounds = true
                     previewView.layer.addSublayer(previewLayer)
                     captureSession.startRunning()
@@ -139,9 +140,9 @@ class ViewController: UIViewController {
 
 extension ViewController : AVCapturePhotoCaptureDelegate {
     
-    func capture(_ captureOutput: AVCapturePhotoOutput,
-                 didFinishProcessingPhotoSampleBuffer photoSampleBuffer: CMSampleBuffer?,
-                 previewPhotoSampleBuffer: CMSampleBuffer?,
+    func photoOutput(_ captureOutput: AVCapturePhotoOutput,
+                     didFinishProcessingPhoto photoSampleBuffer: CMSampleBuffer?,
+                     previewPhoto previewPhotoSampleBuffer: CMSampleBuffer?,
                  resolvedSettings: AVCaptureResolvedPhotoSettings,
                  bracketSettings: AVCaptureBracketedStillImageSettings?,
                  error: Error?)
@@ -161,9 +162,9 @@ extension ViewController : AVCapturePhotoCaptureDelegate {
         }
     }
     
-    func capture(_ captureOutput: AVCapturePhotoOutput,
-                 didFinishProcessingRawPhotoSampleBuffer rawSampleBuffer: CMSampleBuffer?,
-                 previewPhotoSampleBuffer: CMSampleBuffer?,
+    func photoOutput(_ captureOutput: AVCapturePhotoOutput,
+                     didFinishProcessingRawPhoto rawSampleBuffer: CMSampleBuffer?,
+                     previewPhoto previewPhotoSampleBuffer: CMSampleBuffer?,
                  resolvedSettings: AVCaptureResolvedPhotoSettings,
                  bracketSettings: AVCaptureBracketedStillImageSettings?,
                  error: Error?) {
@@ -185,7 +186,7 @@ extension ViewController : AVCapturePhotoCaptureDelegate {
     func showImage() {
         let dataProvider = CGDataProvider(data: self.currentImage!.image as CFData)
         let cgImageRef: CGImage! = CGImage(jpegDataProviderSource: dataProvider!, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
-        let image = UIImage(cgImage: cgImageRef, scale: 1.0, orientation: UIImageOrientation.right)
+        let image = UIImage(cgImage: cgImageRef, scale: 1.0, orientation: UIImage.Orientation.right)
         
         self.capturedButton.imageView?.contentMode = .scaleAspectFill
         self.capturedButton.setImage(image, for: .normal)
@@ -210,7 +211,7 @@ extension ViewController {
         }
         
         settings.isHighResolutionPhotoEnabled = self.highResolutionEnabled
-        if cameraOutput.supportedFlashModes.contains(NSNumber(value: self.flashMode.rawValue)) {
+        if cameraOutput.supportedFlashModes.contains(AVCaptureDevice.FlashMode(rawValue: AVCaptureDevice.FlashMode.RawValue(truncating: NSNumber(value: self.flashMode.rawValue)))!) {
             settings.flashMode = self.flashMode
         }
         
@@ -324,6 +325,8 @@ extension ViewController {
             showToast(text: "Flash mode: off")
             button.setImage(UIImage(named: "FlashOff"), for: .normal)
             break
+        @unknown default:
+            print("unknown default")
         }
     }
     
